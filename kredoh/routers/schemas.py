@@ -123,11 +123,11 @@ class kyandaBillTransaction(BaseModel):
 class KredohTransaction(BaseModel):
     phone_number: str
     amount: str
+    transaction_type: str
     other_phone_number: Optional[str] = None
     firebase_token: Optional[str] = None
     sms_request: Optional[str] = None
-    app_version: str
-    transaction_type: str
+    app_version: Optional[str] = None
     meter_number: Optional[str] = None
     transaction_id: Optional[str] = None
 
