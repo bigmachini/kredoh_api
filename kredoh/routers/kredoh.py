@@ -25,7 +25,7 @@ async def kredoh_api(kredoh_transaction: KredohTransaction, request: Request):
         }
     """
     try:
-        txn_id = f'tran_{binascii.hexlify(os.urandom(20)).decode()}'
+        txn_id = f'kredoh_{binascii.hexlify(os.urandom(20)).decode()}'
         kredoh_transaction.transaction_id = txn_id
         table_name = _get_table_name(request.url.path)
         result = store_to_firestore(txn_id, kredoh_transaction.dict(), request.url.path, table_name)

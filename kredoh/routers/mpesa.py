@@ -4,31 +4,65 @@ import os
 from fastapi import Request, APIRouter
 
 from . import store_to_firestore, _get_table_name
-from .schemas import KredohTransaction
+from .schemas import StkQuery, Reversal, TransactionStatus
 
 debug = True
 router = APIRouter(
     tags=['Mpesa'],
-    prefix='/mangondo'
+    prefix='/asepm'
 )
 
 
 # bill transaction
-@router.post("/transaction")
-async def kredoh_api(kredoh_transaction: KredohTransaction, request: Request):
-    """
-    This will be called when initiating a kredoh transaction
+@router.post("/stk-query")
+async def stk_query_api(obj: StkQuery, request: Request):
+    """This endpoint is used to query mpesa given a checkout_request_id
 
     :return: \n
         {
-            'status' : 'Success'
+            'status' : 'Success/Failed'
         }
     """
     try:
-        txn_id = f'tran_{binascii.hexlify(os.urandom(20)).decode()}'
-        kredoh_transaction.transaction_id = txn_id
+        txn_id = f'mpesa_{binascii.hexlify(os.urandom(20)).decode()}'
         table_name = _get_table_name(request.url.path)
-        result = store_to_firestore(txn_id, kredoh_transaction.dict(), request.url.path, table_name)
-        return {"status": 'Success' if result else 'Exists'}
+        result = store_to_firestore(txn_id, obj.dict(), request.url.path, table_name)
+        return {"status": 'Success' if result else 'Failed'}
+    except Exception as ex:
+        return {"status": 'Failed'}
+
+
+@router.post("/reversal")
+async def stk_query_api(obj: Reversal, request: Request):
+    """This endpoint is used to process mpesa reversals
+
+    :return: \n
+        {
+            'status' : 'Success/Failed'
+        }
+    """
+    try:
+        txn_id = f'mpesa_{binascii.hexlify(os.urandom(20)).decode()}'
+        table_name = _get_table_name(request.url.path)
+        result = store_to_firestore(txn_id, obj.dict(), request.url.path, table_name)
+        return {"status": 'Success' if result else 'Failed'}
+    except Exception as ex:
+        return {"status": 'Failed'}
+
+
+@router.post("/transaction-status")
+async def transaction_status_api(obj: TransactionStatus, request: Request):
+    """This endpoint is used to check the status of a transaction
+
+    :return: \n
+        {
+            'status' : 'Success/Failed'
+        }
+    """
+    try:
+        txn_id = f'mpesa_{binascii.hexlify(os.urandom(20)).decode()}'
+        table_name = _get_table_name(request.url.path)
+        result = store_to_firestore(txn_id, obj.dict(), request.url.path, table_name)
+        return {"status": 'Success' if result else 'Failed'}
     except Exception as ex:
         return {"status": 'Failed'}

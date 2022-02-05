@@ -112,6 +112,23 @@ class ReversalCallback(BaseModel):
     Result: CallbackResult
 
 
+class StkQuery(BaseModel):
+    checkout_request_id: str
+    callback_url: str
+
+
+class Reversal(BaseModel):
+    transaction_id: Optional[str]
+    firebase_token: Optional[str]
+    mpesa_code: str
+    amount: str
+
+
+class TransactionStatus(BaseModel):
+    mpesa_code: str
+    callback_url: str
+
+
 # KYANDA
 class TELCOS(str, Enum):
     KPLC_PREPAID = 'KPLC_PREPAID'
