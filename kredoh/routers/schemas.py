@@ -1,3 +1,5 @@
+from enum import Enum
+
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -111,16 +113,43 @@ class ReversalCallback(BaseModel):
 
 
 # KYANDA
-class kyandaBillTransaction(BaseModel):
+class TELCOS(str, Enum):
+    KPLC_PREPAID = 'KPLC_PREPAID'
+    KPLC_POSTPAID = 'KPLC_POSTPAID'
+    GOTV = 'GOTV'
+    DSTV = 'DSTV'
+    ZUKU = 'ZUKU'
+    STARTIMES = 'STARTIMES'
+    NAIROBI_WTR = 'NAIROBI_WTR'
+    SAFARICOM = 'SAFARICOM'
+    AIRTEL = 'AIRTEL'
+    TELKOM = 'TELKOM'
+    EQUITEL = 'EQUITEL'
+    FAIBA = 'FAIBA'
+    FAIBA_B = 'FAIBA_B'
+
+
+class TRANSACTION_TYPE(str, Enum):
+    AIRTIME = 'airtime'
+    BILL = 'bill'
+
+
+class kyandaTransaction(BaseModel):
     amount: str
-    account: str
-    telco: str
+    account: Optional[str] = None
+    phone: Optional[str] = None
+    telco: TELCOS
     initiator_phone: str
     transaction_id: str
+    transaction_type: TRANSACTION_TYPE
 
 
 class KyandaCheckTransaction(BaseModel):
     kyanda_id: str
+
+
+class KyandaRegisterURL(BaseModel):
+    callback_url: str
 
 
 # KREDOH

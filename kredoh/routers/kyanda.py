@@ -2,10 +2,9 @@ import binascii
 import os
 
 from fastapi import Request, APIRouter
-import time
 
 from . import store_to_firestore, _get_table_name
-from .schemas import kyandaBillTransaction, KyandaCheckTransaction
+from .schemas import kyandaTransaction, KyandaCheckTransaction, KyandaRegisterURL
 
 debug = True
 router = APIRouter(
@@ -27,28 +26,38 @@ def _get_signature(message):
 
 
 # bill transaction
-@router.post("/bill-transaction")
-async def bill_transaction_api(bill_transaction: kyandaBillTransaction, request: Request):
-    """
-    This will be called when placing a kyanda bill transaction
+@router.post("/transaction")
+async def transaction_api(obj: kyandaTransaction, request: Request):
+    """This will be called when placing a kyanda transaction whether airtime or paying a bill
 
-    :return: \n
-        {
-            'status' : 'Success'
-        }
+    :return:\n
+        { "status" : "Success/Exists/Failed/Invalid" }
+    *Success* --> record was added to firestore successfully\n
+    *Exists* --> record already exists\n
+    *Failed* --> Exception occurred\n
+    *Invalid* -->  Invalid Payload\n
     """
     try:
-        signature = f'{bill_transaction.amount}{bill_transaction.account}{bill_transaction.telco}{bill_transaction.initiator_phone}{MERCHANT_ID}'
-        txn_id = _get_signature(signature + bill_transaction.transaction_id)
+        if (obj.account and obj.phone) or (obj.account is None and obj.phone is None):
+            return {"status": 'Invalid'}
+
+        if obj.account:
+            signature = f'{obj.amount}{obj.account}{obj.telco}{obj.initiator_phone}{MERCHANT_ID}'
+        if obj.phone:
+            signature = f'{obj.amount}{obj.phone}{obj.telco}{obj.initiator_phone}{MERCHANT_ID}'
+
+        txn_id = _get_signature(signature + obj.transaction_id)
 
         payload = {
             "MerchantID": MERCHANT_ID,
-            "account": bill_transaction.account,
-            "amount": bill_transaction.amount,
-            "telco": bill_transaction.telco,
-            "initiatorPhone": bill_transaction.initiator_phone,
+            "account": obj.account,
+            "amount": obj.amount,
+            "transaction_type": obj.transaction_type,
+            "phone": obj.phone,
+            "telco": obj.telco,
+            "initiatorPhone": obj.initiator_phone,
             "signature": _get_signature(signature),
-            "transaction_id": bill_transaction.transaction_id
+            "transaction_id": obj.transaction_id
         }
 
         table_name = _get_table_name(request.url.path)
@@ -104,5 +113,30 @@ async def check_transaction_api(obj: KyandaCheckTransaction, request: Request):
         result = store_to_firestore(transaction_id, obj.dict(), request.url.path, table_name)
         return {"status": 'Success' if result else 'Failed'}
     except Exception as ex:
-        print("ex",ex)
+        print("ex", ex)
+        return {"status": 'Failed'}
+
+
+# Kyanda Register URL
+@router.post("/register-url")
+async def register_url_api(obj: KyandaRegisterURL, request: Request):
+    """This endpoint is used to register the callback url for your application
+
+    Args:
+        obj: KyandaRegisterURL object containing callback_url
+
+    :param request:
+
+    :return:\n
+        { "status" : "Success/Failed" }
+    *Success* --> record was added to firestore successfully\n
+    *Failed* --> Exception occurred\n
+    """
+    try:
+        transaction_id = f'kyanda_{binascii.hexlify(os.urandom(20)).decode()}'
+        table_name = _get_table_name(request.url.path)
+        result = store_to_firestore(transaction_id, obj.dict(), request.url.path, table_name)
+        return {"status": 'Success' if result else 'Failed'}
+    except Exception as ex:
+        print("ex", ex)
         return {"status": 'Failed'}
