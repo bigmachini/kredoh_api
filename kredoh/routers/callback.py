@@ -2,6 +2,7 @@ from typing import Optional
 
 from fastapi import Path, Request, APIRouter
 
+from . import store_to_firestore
 from .schemas import ATCallback, KyandaCallback, StkPushCallback, C2BCallback, \
     TransactionStatusCallback, ReversalCallback
 

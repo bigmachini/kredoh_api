@@ -5,7 +5,7 @@ from fastapi import Request, APIRouter
 import time
 
 from . import store_to_firestore, _get_table_name
-from .schemas import kyandaBillTransaction
+from .schemas import kyandaBillTransaction, KyandaCheckTransaction
 
 debug = True
 router = APIRouter(
@@ -58,7 +58,7 @@ async def bill_transaction_api(bill_transaction: kyandaBillTransaction, request:
         return {"status": 'Failed'}
 
 
-# Kyanda callbacks
+# check balance
 @router.get("/check-balance")
 async def check_balance_api(request: Request):
     """
@@ -81,82 +81,28 @@ async def check_balance_api(request: Request):
         return {"status": 'Success' if result else 'Failed'}
     except Exception as ex:
         return {"status": 'Failed'}
-#
-#
-# # mpesa callbacks
-# @router.post("/stk-push-callback")
-# async def stk_push_callback_api(stk_callback: StkPushCallback, request: Request):
-#     """
-#       This callback will be called when processing of stk_push is done
-#       The data is in the format:
-#       :return:
-#       \n
-#           { "status" : "Success/Exists/Failed" }
-#       *Success* --> record was added to firestore successfully\n
-#       *Exists* --> record already exists in firestore\n
-#       *Failed* --> Exception occurred
-#       """
-#     try:
-#         result = store_to_firestore(stk_callback.Body.stkCallback.MerchantRequestID, stk_callback.dict(),
-#                                     request.url.path)
-#         return {"status": 'Success' if result else 'Exists'}
-#     except Exception as ex:
-#         return {"status": 'Failed'}
-#
-#
-# @router.post("/c2b-callback")
-# async def c2b_callback_api(c2b_callback: C2BCallback, request: Request):
-#     """
-#          This callback will be called when processing of stk_push is done \n
-#
-#          :return:
-#          \n
-#              { "status" : "Success/Exists/Failed" }
-#          *Success* --> record was added to firestore successfully\n
-#          *Exists* --> record already exists in firestore\n
-#          *Failed* --> Exception occurred
-#     """
-#     try:
-#         result = store_to_firestore(c2b_callback.TransID, c2b_callback.dict(),
-#                                     request.url.path)
-#         return {"status": 'Success' if result else 'Exists'}
-#     except Exception as ex:
-#         return {"status": 'Failed'}
-#
-#
-# @router.post("/transaction-status-callback")
-# async def transactions_status_callback_api(ts_callback: TransactionStatusCallback, request: Request):
-#     """
-#          This callback will be called when processing of stk_push is done \n
-#          :return:
-#          \n
-#              { "status" : "Success/Exists/Failed" }
-#          *Success* --> record was added to firestore successfully\n
-#          *Exists* --> record already exists in firestore\n
-#          *Failed* --> Exception occurred
-#     """
-#     try:
-#         result = store_to_firestore(ts_callback.Result.ConversationID, ts_callback.dict(),
-#                                     request.url.path)
-#         return {"status": 'Success' if result else 'Exists'}
-#     except Exception as ex:
-#         return {"status": 'Failed'}
-#
-#
-# @router.post("/stk-reversal-callback")
-# async def mpesa_reversal_callback(reversal_callback: ReversalCallback, request: Request):
-#     """
-#          This callback will be called when processing of stk_push is done \n
-#          :return:
-#          \n
-#              { "status" : "Success/Exists/Failed" }
-#          *Success* --> record was added to firestore successfully\n
-#          *Exists* --> record already exists in firestore\n
-#          *Failed* --> Exception occurred
-#     """
-#     try:
-#         result = store_to_firestore(reversal_callback.Result.ConversationID, reversal_callback.dict(),
-#                                     request.url.path)
-#         return {"status": 'Success' if result else 'Exists'}
-#     except Exception as ex:
-#         return {"status": 'Failed'}
+
+
+# Check Transaction
+@router.post("/check-transaction")
+async def check_transaction_api(obj: KyandaCheckTransaction, request: Request):
+    """This endpoint is used to check the status of a transactions
+
+    Args:
+        obj: KyandaCheckTransaction object containing kyanda_id
+
+    :param request:
+
+    :return:\n
+        { "status" : "Success/Failed" }
+    *Success* --> record was added to firestore successfully\n
+    *Failed* --> Exception occurred
+    """
+    try:
+        transaction_id = f'kyanda_{binascii.hexlify(os.urandom(20)).decode()}'
+        table_name = _get_table_name(request.url.path)
+        result = store_to_firestore(transaction_id, obj.dict(), request.url.path, table_name)
+        return {"status": 'Success' if result else 'Failed'}
+    except Exception as ex:
+        print("ex",ex)
+        return {"status": 'Failed'}

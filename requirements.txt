@@ -3,3 +3,5 @@ google-cloud-secret-manager
 fastapi
 uvicorn
 sqlalchemy
+requests
+phonenumbers

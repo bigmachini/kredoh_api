@@ -9,7 +9,7 @@ from .schemas import KredohTransaction
 debug = True
 router = APIRouter(
     tags=['Mpesa'],
-    prefix='/asepm'
+    prefix='/mangondo'
 )
 
 

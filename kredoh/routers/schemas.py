@@ -119,6 +119,10 @@ class kyandaBillTransaction(BaseModel):
     transaction_id: str
 
 
+class KyandaCheckTransaction(BaseModel):
+    kyanda_id: str
+
+
 # KREDOH
 class KredohTransaction(BaseModel):
     phone_number: str
@@ -130,4 +134,3 @@ class KredohTransaction(BaseModel):
     app_version: Optional[str] = None
     meter_number: Optional[str] = None
     transaction_id: Optional[str] = None
-
