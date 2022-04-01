@@ -16,7 +16,7 @@ def login(request: OAuth2PasswordRequestForm= Depends(), db: Session = Depends(d
     print('user', user)
     if not user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail=f'Forbiden')
+                            detail=f'Forbidden')
 
     if not hashing.Hash.verify_password(request.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,

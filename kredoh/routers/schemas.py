@@ -148,6 +148,7 @@ class TELCOS(str, Enum):
 
 class TRANSACTION_TYPE(str, Enum):
     AIRTIME = 'airtime'
+    AIRTIME_PIN = 'airtime_pin'
     BILL = 'bill'
 
 
