@@ -24,8 +24,7 @@ def _get_signature(message):
     signature = hmac.new(secret, message, digestmod=hashlib.sha256).hexdigest()
     return signature
 
-
-# bill transaction
+#Kyanda transaction API
 @router.post("/transaction")
 async def transaction_api(obj: kyandaTransaction, request: Request):
     """This will be called when placing a kyanda transaction whether airtime or paying a bill
