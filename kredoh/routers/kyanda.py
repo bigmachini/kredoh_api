@@ -1,10 +1,10 @@
 import binascii
 import os
 
-from fastapi import Request, APIRouter
+from fastapi import Request, APIRouter, HTTPException
 
 from . import store_to_firestore, _get_table_name
-from .schemas import kyandaTransaction, KyandaCheckTransaction, KyandaRegisterURL
+from .schemas import kyandaTransaction, KyandaCheckTransaction, KyandaRegisterURL, TRANSACTION_TYPE
 
 debug = True
 router = APIRouter(
@@ -37,34 +37,38 @@ async def transaction_api(obj: kyandaTransaction, request: Request):
     *Failed* --> Exception occurred\n
     *Invalid* -->  Invalid Payload\n
     """
+    # try:
+    if (obj.account and obj.phone) or (obj.account is None and obj.phone is None):
+        raise HTTPException(status_code=400, detail="Invalid Payload")
+
+    if obj.account:
+        signature = f'{obj.amount}{obj.account}{obj.telco}{obj.initiator_phone}{MERCHANT_ID}'
+    if obj.phone:
+        signature = f'{obj.amount}{obj.phone}{obj.telco}{obj.initiator_phone}{MERCHANT_ID}'
+
+    txn_id = _get_signature(signature + obj.transaction_id)
+
+    if obj.transaction_type == TRANSACTION_TYPE.AIRTIME_PIN and obj.telco not in ['SAFARICOM', 'AIRTEL', 'TELKOM']:
+        raise HTTPException(status_code=400, detail="Invalid Telco")
+
+    payload = {
+        "MerchantID": MERCHANT_ID,
+        "account": obj.account,
+        "amount": obj.amount,
+        "transaction_type": obj.transaction_type,
+        "phone": obj.phone,
+        "telco": obj.telco,
+        "initiatorPhone": obj.initiator_phone,
+        "signature": _get_signature(signature),
+        "transaction_id": obj.transaction_id
+    }
+
     try:
-        if (obj.account and obj.phone) or (obj.account is None and obj.phone is None):
-            return {"status": 'Invalid'}
-
-        if obj.account:
-            signature = f'{obj.amount}{obj.account}{obj.telco}{obj.initiator_phone}{MERCHANT_ID}'
-        if obj.phone:
-            signature = f'{obj.amount}{obj.phone}{obj.telco}{obj.initiator_phone}{MERCHANT_ID}'
-
-        txn_id = _get_signature(signature + obj.transaction_id)
-
-        payload = {
-            "MerchantID": MERCHANT_ID,
-            "account": obj.account,
-            "amount": obj.amount,
-            "transaction_type": obj.transaction_type,
-            "phone": obj.phone,
-            "telco": obj.telco,
-            "initiatorPhone": obj.initiator_phone,
-            "signature": _get_signature(signature),
-            "transaction_id": obj.transaction_id
-        }
-
         table_name = _get_table_name(request.url.path)
         result = store_to_firestore(txn_id, payload, request.url.path, table_name)
         return {"status": 'Success' if result else 'Exists'}
     except Exception as ex:
-        return {"status": 'Failed'}
+        raise HTTPException(status_code=500, detail=str(ex))
 
 
 # check balance
